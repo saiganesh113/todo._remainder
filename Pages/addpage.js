@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { Ionicons, FontAwesome, MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
-import AsyncStorage from '@react-native-async-storage/async-storage'; // Correct AsyncStorage import
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function AddTaskScreen({ navigation }) {
   const [taskTitle, setTaskTitle] = useState('');
@@ -25,9 +25,8 @@ export default function AddTaskScreen({ navigation }) {
   const [selectedTag, setSelectedTag] = useState('');
   const [tagModalVisible, setTagModalVisible] = useState(false);
   const [selectedOption, setSelectedOption] = useState(null);
-  const [priority, setPriority] = useState('Low'); // Default priority
+  const [priority, setPriority] = useState('Low');
   
-  // Function to start the timer and set a notification
   const startTimer = () => {
     const totalTimeInSeconds = selectedHours * 3600 + selectedMinutes * 60;
     setTimeout(() => {
@@ -35,13 +34,11 @@ export default function AddTaskScreen({ navigation }) {
     }, totalTimeInSeconds * 1000);
   };
 
-  // Function to save selected tag
   const saveSelectedTag = () => {
     setSelectedTag(selectedOption);
     setTagModalVisible(false);
   };
 
-  // Function to cycle through priority levels
   const cyclePriority = () => {
     const priorities = ['High', 'Low'];
     const currentIndex = priorities.indexOf(priority);
@@ -49,17 +46,15 @@ export default function AddTaskScreen({ navigation }) {
     setPriority(nextPriority);
   };
 
-  // Function to store the task in local storage
   const storeTask = async () => {
-    // Ensure the description has a valid URL format
     let description = taskDescription;
     if (description && !/^https?:\/\//i.test(description)) {
-      description = 'https://' + description; // Add https:// if it's missing
+      description = 'https://' + description;
     }
 
     const newTask = {
       title: taskTitle,
-      description: description, // Use the formatted description
+      description: description,
       tag: selectedTag,
       time: `${selectedHours}h ${selectedMinutes}m`,
       priority: priority,
@@ -71,7 +66,6 @@ export default function AddTaskScreen({ navigation }) {
       tasksArray.push(newTask);
       await AsyncStorage.setItem('tasks', JSON.stringify(tasksArray));
 
-      // Navigate to Home screen after saving
       navigation.navigate('Home');
     } catch (error) {
       console.error('Error saving task:', error);
@@ -116,23 +110,19 @@ export default function AddTaskScreen({ navigation }) {
           {/* Icons and Send Button Section */}
           <View style={styles.row}>
             <View style={styles.iconRow}>
-              {/* Timer Icon */}
               <TouchableOpacity style={styles.iconButton} onPress={() => setTimeModalVisible(true)}>
                 <Ionicons name="timer-outline" size={40} color="white" />
               </TouchableOpacity>
 
-              {/* Tag Icon - Open Tag Modal */}
               <TouchableOpacity style={styles.iconButton} onPress={() => setTagModalVisible(true)}>
                 <FontAwesome name="tag" size={40} color="white" />
               </TouchableOpacity>
 
-              {/* Priority Icon */}
               <TouchableOpacity style={styles.iconButton} onPress={cyclePriority}>
                 <MaterialIcons name="flag" size={40} color="white" />
               </TouchableOpacity>
             </View>
 
-            {/* Submit Task Button */}
             <TouchableOpacity style={styles.addButton} onPress={storeTask}>
               <Ionicons name="send-outline" size={40} color="white" />
             </TouchableOpacity>
@@ -152,14 +142,14 @@ export default function AddTaskScreen({ navigation }) {
             <View style={styles.modalContent}>
               <Text style={styles.modalHeader}>Choose Time</Text>
 
-              {/* Picker for Hours and Minutes Side by Side */}
+              {/* Picker for Hours and Minutes */}
               <View style={styles.pickerContainer}>
                 <View style={styles.pickerWrapper}>
                   <Text style={styles.pickerLabel}>Hours</Text>
                   <Picker
                     selectedValue={selectedHours}
-                    style={[styles.picker, { height: 150, overflow: 'hidden' }]}
-                    itemStyle={[styles.pickerItem, { fontSize: 24, height: 30, textAlign: 'center' }]}
+                    style={styles.picker}
+                    itemStyle={styles.pickerItem}
                     onValueChange={(itemValue) => setSelectedHours(itemValue)}
                   >
                     {Array.from({ length: 25 }, (_, i) => i).map((hour) => (
@@ -172,8 +162,8 @@ export default function AddTaskScreen({ navigation }) {
                   <Text style={styles.pickerLabel}>Minutes</Text>
                   <Picker
                     selectedValue={selectedMinutes}
-                    style={[styles.picker, { height: 150, overflow: 'hidden' }]}
-                    itemStyle={[styles.pickerItem, { fontSize: 24, height: 30, textAlign: 'center' }]}
+                    style={styles.picker}
+                    itemStyle={styles.pickerItem}
                     onValueChange={(itemValue) => setSelectedMinutes(itemValue)}
                   >
                     {Array.from({ length: 60 }, (_, i) => i).map((minute) => (
@@ -243,12 +233,10 @@ export default function AddTaskScreen({ navigation }) {
         </Modal>
       </KeyboardAvoidingView>
 
-      {/* Floating Action Button (FAB) */}
       <Pressable style={styles.fab} onPress={() => navigation.navigate('Add')}>
         <MaterialIcons name="add" size={32} color="white" />
       </Pressable>
 
-      {/* Bottom Navigation */}
       <View style={styles.bottomNav}>
         <Pressable style={styles.navItem} onPress={() => navigation.navigate('Home')}>
           <MaterialCommunityIcons name="view-grid" size={24} color="white" />
@@ -275,18 +263,16 @@ export default function AddTaskScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { paddingTop:20, flex: 1, backgroundColor: '#121212' },
+  container: { paddingTop: 20, flex: 1, backgroundColor: '#121212' },
   innerContainer: { padding: 20 },
   headerText: { fontSize: 20, color: 'white' },
   input: { backgroundColor: '#1c1c1c', color: 'white', padding: 12, borderRadius: 8, marginVertical: 10 },
-  row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop:20 },
+  row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 20 },
   iconRow: { flexDirection: 'row' },
-  iconButton: { alignItems: 'center', marginHorizontal: 5 , padding:10, backgroundColor: '#7f7fff', borderRadius: 30, },
-  iconText: { color: 'green', fontSize: 12, marginTop: 4 },
+  iconButton: { alignItems: 'center', marginHorizontal: 5, padding: 10, backgroundColor: '#7f7fff', borderRadius: 30 },
   addButton: { backgroundColor: '#7f7fff', borderRadius: 30, padding: 10 },
   tagContainer: { marginTop: 20 },
   selectedTag: { color: 'green', fontSize: 16 },
-
   modalBackground: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0, 0, 0, 0.7)' },
   modalContent: { width: 300, backgroundColor: '#333', padding: 20, borderRadius: 10, alignItems: 'center' },
   modalHeader: { fontSize: 18, color: 'white', marginBottom: 20 },
@@ -295,64 +281,22 @@ const styles = StyleSheet.create({
   saveText: { color: '#7f7fff', fontSize: 16 },
   pickerContainer: { flexDirection: 'row', justifyContent: 'space-between', width: '100%', alignItems: 'center' },
   pickerWrapper: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  picker: { width: 60, height: 60, color: 'white', backgroundColor: '#444', borderRadius: 10 },
-  pickerItem: { fontSize: 24, height: 30, textAlign: 'center' },
+  picker: { width: '80%', height: 120, color: 'white', backgroundColor: '#444', borderRadius: 10 },
+  pickerItem: { fontSize: 36, height: 150, textAlign: 'center', color: 'white' },
   pickerLabel: { color: 'white', marginBottom: 10, fontSize: 16 },
-
   optionsContainer: { marginBottom: 20 },
   optionButton: { backgroundColor: '#333', padding: 15, marginBottom: 10, borderRadius: 8 },
   selectedOption: { backgroundColor: '#7f7fff' },
   optionText: { color: 'white', fontSize: 16 },
   selectedOptionText: { color: 'white' },
-
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    padding: 20,
-    alignItems: 'center',
-  },
-  headerTitle: {
-    fontSize: 22,
-    color: 'white',
-    fontWeight: 'bold',
-  },
-  profileIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-  },
-  fab: {
-    backgroundColor: '#7f7fff',
-    borderRadius: 35,
-    padding: 20,
-    position: 'absolute',
-    bottom: 30,
-    left: '50%',
-    transform: [{ translateX: -35 }],
-    elevation: 5,
-    zIndex: 10,
-  },
-  bottomNav: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    paddingVertical: 20,
-    backgroundColor: '#1c1c1c',
-    height: 80,
-  },
-  navItem: {
-    alignItems: 'center',
-    flex: 1,
-  },
-  leftNavItem: {
-    marginRight: 40,
-  },
-  rightNavItem: {
-    marginLeft: 40,
-  },
-  navText: {
-    color: 'white',
-    fontSize: 12,
-    marginTop: 5,
-  },
+  header: { flexDirection: 'row', justifyContent: 'space-between', padding: 20, alignItems: 'center' },
+  headerTitle: { fontSize: 22, color: 'white', fontWeight: 'bold' },
+  profileIcon: { width: 40, height: 40, borderRadius: 20 },
+  fab: { backgroundColor: '#7f7fff', borderRadius: 35, padding: 20, position: 'absolute', bottom: 30, left: '50%', transform: [{ translateX: -35 }], elevation: 5, zIndex: 10 },
+  bottomNav: { flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', paddingVertical: 20, backgroundColor: '#1c1c1c', height: 80 },
+  navItem: { alignItems: 'center', flex: 1 },
+  leftNavItem: { marginRight: 40 },
+  rightNavItem: { marginLeft: 40 },
+  navText: { color: 'white', fontSize: 12, marginTop: 5 },
 });
+

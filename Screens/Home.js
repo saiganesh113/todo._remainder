@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { View, Text, Pressable, StyleSheet, SafeAreaView, Image, FlatList, Linking, Platform } from 'react-native';
 import { MaterialIcons, MaterialCommunityIcons, FontAwesome } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -19,7 +19,6 @@ export default function HomeScreen({ navigation }) {
   const [taskStatuses, setTaskStatuses] = useState({});
   const [timers, setTimers] = useState({});
 
-  // Configure notifications
   useEffect(() => {
     if (Platform.OS !== 'web') {
       const notificationListener = Notifications.addNotificationReceivedListener((notification) => {
@@ -42,19 +41,21 @@ export default function HomeScreen({ navigation }) {
     }
   }, []);
 
-  // Fetch tasks from local storage
   const fetchTasks = async () => {
     try {
       const storedTasks = await AsyncStorage.getItem('tasks');
       const tasksArray = storedTasks ? JSON.parse(storedTasks) : [];
       setTasks(tasksArray);
 
-      // Initialize task statuses and timers
-      const statuses = {};
+      const storedStatuses = await AsyncStorage.getItem('taskStatuses');
+      const statuses = storedStatuses ? JSON.parse(storedStatuses) : {};
+      
       const timersInit = {};
       tasksArray.forEach((task, index) => {
-        statuses[index] = { doing: false, originalTime: task.time, remainingTime: task.time };
-        timersInit[index] = null; // Initialize null timers
+        if (!statuses[index]) {
+          statuses[index] = { doing: false, originalTime: task.time, remainingTime: task.time };
+        }
+        timersInit[index] = null;
       });
       setTaskStatuses(statuses);
       setTimers(timersInit);
@@ -63,14 +64,27 @@ export default function HomeScreen({ navigation }) {
     }
   };
 
-  // Using useFocusEffect to refetch tasks when screen comes into focus
+  useEffect(() => {
+    fetchTasks();
+  }, []);
+
+  useEffect(() => {
+    const saveTaskStatuses = async () => {
+      try {
+        await AsyncStorage.setItem('taskStatuses', JSON.stringify(taskStatuses));
+      } catch (error) {
+        console.error('Error saving task statuses:', error);
+      }
+    };
+    saveTaskStatuses();
+  }, [taskStatuses]);
+
   useFocusEffect(
     useCallback(() => {
       fetchTasks();
     }, [])
   );
 
-  // Handle task editing and updating
   const updateTask = async (index, updatedTask) => {
     const updatedTasks = [...tasks];
     if (updatedTask === null) {
@@ -82,7 +96,6 @@ export default function HomeScreen({ navigation }) {
     await AsyncStorage.setItem('tasks', JSON.stringify(updatedTasks));
   };
 
-  // Handle link navigation
   const handleTaskClick = (task) => {
     if (task.description) {
       let url = task.description;
@@ -93,14 +106,12 @@ export default function HomeScreen({ navigation }) {
     }
   };
 
-  // Helper to format time from total minutes to HHh MMm format
   const formatTime = (totalMinutes) => {
     const hours = Math.floor(totalMinutes / 60);
     const minutes = totalMinutes % 60;
     return `${hours}h ${minutes < 10 ? '0' : ''}${minutes}m`;
   };
 
-  // Start the countdown timer (minutes from 0 to 24)
   const startTimer = (index) => {
     const [hours, minutes] = taskStatuses[index].remainingTime
       .replace('h', '')
@@ -119,11 +130,9 @@ export default function HomeScreen({ navigation }) {
       });
     };
 
-    // Update the timer every minute
     const intervalId = setInterval(() => {
       remainingTimeInMinutes -= 1;
 
-      // If time has run out, stop the countdown and send a notification
       if (remainingTimeInMinutes <= 0) {
         clearInterval(intervalId);
         sendNotification(tasks[index].title);
@@ -136,7 +145,7 @@ export default function HomeScreen({ navigation }) {
       } else {
         updateTime(remainingTimeInMinutes);
       }
-    }, 60000); // Update every minute
+    }, 60000);
 
     setTimers((prevTimers) => ({
       ...prevTimers,
@@ -144,29 +153,26 @@ export default function HomeScreen({ navigation }) {
     }));
   };
 
-  // Handle button toggle (Start/Doing)
   const handleToggle = (index) => {
-    const newStatuses = { ...taskStatuses };
+    setTaskStatuses((prevStatuses) => {
+      const newStatuses = { ...prevStatuses };
 
-    if (!newStatuses[index].doing) {
-      // Start the task and begin the timer
-      newStatuses[index].doing = true;
-      startTimer(index);
-    } else {
-      // Reset task to default state if "Doing" is toggled off
-      newStatuses[index].doing = false;
-      clearInterval(timers[index]);
-      newStatuses[index].remainingTime = newStatuses[index].originalTime;
-    }
+      if (!newStatuses[index].doing) {
+        newStatuses[index].doing = true;
+        startTimer(index);
+      } else {
+        newStatuses[index].doing = false;
+        clearInterval(timers[index]);
+        newStatuses[index].remainingTime = newStatuses[index].originalTime;
+      }
 
-    setTaskStatuses(newStatuses);
+      return newStatuses;
+    });
   };
 
-  // Function to send a notification when the timer ends (for web and mobile)
   const sendNotification = async (taskTitle) => {
     console.log("sendNotification called for task:", taskTitle);
     if (Platform.OS !== 'web') {
-      // Mobile notification
       await Notifications.scheduleNotificationAsync({
         content: {
           title: "Time's up!",
@@ -175,10 +181,8 @@ export default function HomeScreen({ navigation }) {
         trigger: null,
       });
     } else if (Platform.OS === 'web' && Notification.permission === 'granted') {
-      // Web browser notification
       new Notification('Time\'s up!', { body: `The timer for "${taskTitle}" has ended.` });
     } else if (Platform.OS === 'web' && Notification.permission !== 'granted') {
-      // Request permission for web notifications
       Notification.requestPermission().then(permission => {
         if (permission === 'granted') {
           new Notification('Time\'s up!', { body: `The timer for "${taskTitle}" has ended.` });
@@ -204,7 +208,6 @@ export default function HomeScreen({ navigation }) {
           keyExtractor={(item, index) => index.toString()}
           renderItem={({ item, index }) => (
             <View style={styles.taskContainer}>
-              {/* Task Left Icon - Click this to navigate to EditTaskScreen */}
               <Pressable
                 style={styles.leftIconContainer}
                 onPress={() => navigation.navigate('EditTaskScreen', { taskIndex: index, taskData: item, updateTask })}
@@ -212,18 +215,15 @@ export default function HomeScreen({ navigation }) {
                 <MaterialCommunityIcons name="send" size={28} color="#7f7fff" />
               </Pressable>
 
-              {/* Task Content - Click this to open the URL */}
               <Pressable style={styles.taskContent} onPress={() => handleTaskClick(item)}>
                 <Text style={styles.taskTitle}>{item.title}</Text>
                 <Text style={styles.taskTime}>Time Remaining: {taskStatuses[index]?.remainingTime}</Text>
               </Pressable>
 
-              {/* Task Right Section */}
               <View style={styles.taskRightSection}>
                 <Text style={styles.taskTag}>{item.tag}</Text>
                 <Text style={styles.taskStatus}>Priority: {item.priority}</Text>
 
-                {/* Start/Doing Button */}
                 <Pressable
                   style={[styles.button, { backgroundColor: taskStatuses[index]?.doing ? 'red' : 'green' }]}
                   onPress={() => handleToggle(index)}

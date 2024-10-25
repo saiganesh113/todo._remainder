@@ -12,8 +12,13 @@ export default function FocusPage({ navigation }) {
         <Image source={{ uri: 'https://randomuser.me/api/portraits/men/1.jpg' }} style={styles.profileIcon} />
       </View>
 
-      <View style={styles.content}>
-        <Text style={styles.text}>Focus Page</Text>
+      <View style={styles.contentWithDellBackground}>
+        {/* Lock Icon in Background */}
+        <MaterialIcons name="lock" size={200} color="light-white" style={styles.lockIcon} />
+
+        <View style={styles.content}>
+          <Text style={styles.text}>New Future is ready For you</Text>
+        </View>
       </View>
 
       {/* Floating Action Button (FAB) */}
@@ -70,10 +75,39 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: 20,
   },
+  contentWithDellBackground: {
+    flex: 1,
+    backgroundColor: '#333',
+    borderRadius: 10,
+    margin: 1,
+    padding: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative', // To allow absolute positioning of the lock icon
+  },
+  lockIcon: {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    transform: [{ translateX: -100 }, { translateY: -100 }],
+    zIndex: 0, // Ensures it is behind the text
+  },
+  topTextContainer: {
+    padding: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 10,
+    marginBottom: 20,
+    zIndex: 1, // Ensures it is above the lock icon
+  },
+  topText: {
+    fontSize: 16,
+    color: 'white',
+    textAlign: 'center',
+  },
   content: {
     justifyContent: 'center',
     alignItems: 'center',
-    flex: 1,
+    zIndex: 1, // Ensures it is above the lock icon
   },
   text: {
     fontSize: 24,
